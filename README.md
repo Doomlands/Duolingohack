@@ -1,2 +1,2 @@
 # Duolingohack
-Paste into console for auto answer
+Paste into console for autolingo
