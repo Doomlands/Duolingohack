@@ -285,4 +285,4 @@ function solveChallenge() {
 
 
 
-window.alert("Thanks so much for using this hack pls drop a star and follow");
+window.alert("Developed by Gsnipe1blookethacks, and Doomlands!           Thanks so much for using this hack pls drop a star and follow");
