@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      0.1
 // @description  Auto answer Duolingo script!
-// @author       Tran Quy <>
+// @author       Yours truly
 // @match        https://www.duolingo.com/skill*
 // @icon         https://www.google.com/s2/favicons?domain=duolingo.com
 // @grant        none
@@ -285,4 +285,4 @@ function solveChallenge() {
 
 
 
-window.alert("Developed by Doomlands!           Thanks so much for using this hack pls drop a star and follow");
+window.alert("Developed by Doomlands");
