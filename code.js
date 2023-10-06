@@ -1,67 +1,288 @@
-/**
-* @license StewartPrivateLicense-2.0.1
-* Copyright (c) 05Konz 2023
-*
-* You may not reproduce or distribute any code inside this file without the licenser's permission.
-* You may not copy, modify, steal, skid, or recreate any of the code inside this file.
-* You may not under any circumstance republish any code from this file as your own.
-* 
-* ALL TERMS STATED IN THE LINK BELOW APPLY ASWELL
-* https://github.com/05Konz/Blooket-Cheats/blob/main/LICENSE
-*/
+// ==UserScript==
+// @name         Duolingo-Cheat-Tool
+// @namespace    http://tampermonkey.net/
+// @version      0.1
+// @description  Auto answer Duolingo script!
+// @author       Yours truly
+// @match        https://www.duolingo.com/skill*
+// @icon         https://www.google.com/s2/favicons?domain=duolingo.com
+// @grant        none
+// ==/UserScript==
 
-/* THE UPDATE CHECKER IS ADDED DURING COMMIT PREP, THERE MAY BE REDUNDANT CODE, DO NOT TOUCH */
+const DEBUG = true;
+let mainInterval;
 
-(() => {
-    const cheat = (async () => {
-        let i = document.createElement('iframe');
-        document.body.append(i);
-        window.alert = i.contentWindow.alert.bind(window);
-        i.remove();
-        if (!location.href.includes("play.blooket.com")) (alert("This cheat only works on play.blooket.com, opening a new tab."), window.open("https://play.blooket.com/"));
-        else {
-            const cache = Object.values(webpackJsonp.push([[], { ['']: (_, a, b) => { a.cache = b.c }, }, [['']],]).cache),
-                axios = cache.find((x) => x.exports?.a?.get).exports.a,
-                { data: { t } } = await axios.post("https://play.blooket.com/api/playersessions/solo", {
-                    gameMode: "Factory",
-                    questionSetId: ["60101da869e8c70013913b59", "625db660c6842334835cb4c6", "60268f8861bd520016eae038", "611e6c804abdf900668699e3", "60ba5ff6077eb600221b7145", "642467af9b704783215c1f1b", "605bd360e35779001bf57c5e", "6234cc7add097ff1c9cff3bd", "600b1491d42a140004d5215a", "5db75fa3f1fa190017b61c0c", "5fac96fe2ca0da00042b018f", "600b14d8d42a140004d52165", "5f88953cdb209e00046522c7", "600b153ad42a140004d52172", "5fe260e72a505b00040e2a11", "5fe3d085a529560004cd3076", "5f5fc017aee59500041a1456", "608b0a5863c4f2001eed43f4", "5fad491512c8620004918ace", "5fc91a9b4ea2e200046bd49a", "5c5d06a7deebc70017245da7", "5ff767051b68750004a6fd21", "5fdcacc85d465a0004b021b9", "5fb7eea20bd44300045ba495"][Math.floor(Math.random() * 24)]
-                });
-            await axios.post("https://play.blooket.com/api/playersessions/landings", { t });
-            await axios.get("https://play.blooket.com/api/playersessions/questions", { params: { t } });
-            const { name, blook: { name: blookUsed } } = await cache.find(x => x.exports.a?.me).exports.a.me({}).catch(() => alert('There was an error getting user data.'));
-            await axios.put("https://play.blooket.com/api/users/factorystats", {
-                blookUsed, t, name,
-                cash: Math.floor(Math.random() * 90000000) + 10000000,
-                correctAnswers: Math.floor(Math.random() * 500) + 500,
-                upgrades: Math.floor(Math.random() * 300) + 300,
-                mode: "Time-Solo",
-                nameUsed: "You",
-                place: 1,
-                playersDefeated: 0,
-            });
-            axios.put("https://play.blooket.com/api/users/add-rewards", { t, name, addedTokens: 500, addedXp: 300 })
-                .then(({ data: { dailyReward } }) => alert(`Added max tokens and xp, and got ${dailyReward} daily wheel tokens!`))
-                .catch(() => alert('There was an error when adding rewards.'));
+const dataTestComponentClassName = 'e4VJZ';
+
+const TIME_OUT = 1000;
+
+// Challenge types
+const CHARACTER_SELECT_TYPE = 'characterSelect';
+const CHARACTER_MATCH_TYPE = 'characterMatch';
+const TRANSLATE_TYPE = 'translate';
+const LISTEN_TAP_TYPE = 'listenTap';
+const NAME_TYPE = 'name';
+const COMPLETE_REVERSE_TRANSLATION_TYPE = 'completeReverseTranslation';
+const LISTEN_TYPE = 'listen';
+const SELECT_TYPE = 'select';
+const JUDGE_TYPE = 'judge';
+const FORM_TYPE = 'form';
+const LISTEN_COMPREHENSION_TYPE = 'listenComprehension';
+const READ_COMPREHENSION_TYPE = 'readComprehension';
+const CHARACTER_INTRO_TYPE = 'characterIntro';
+const DIALOGUE_TYPE = 'dialogue';
+const SELECT_TRANSCRIPTION_TYPE = 'selectTranscription';
+const SPEAK_TYPE = 'speak';
+const SELECT_PRONUNCIATION_TYPE = 'selectPronunciation';
+
+// Query DOM keys
+const CHALLENGE_CHOICE_CARD = '[data-test="challenge-choice-card"]';
+const CHALLENGE_CHOICE = '[data-test="challenge-choice"]';
+const CHALLENGE_TRANSLATE_INPUT = '[data-test="challenge-translate-input"]';
+const CHALLENGE_LISTEN_TAP = '[data-test="challenge-listenTap"]';
+const CHALLENGE_JUDGE_TEXT = '[data-test="challenge-judge-text"]';
+const CHALLENGE_TEXT_INPUT = '[data-test="challenge-text-input"]';
+const CHALLENGE_TAP_TOKEN = '[data-test="challenge-tap-token"]';
+const PLAYER_NEXT = '[data-test="player-next"]';
+const PLAYER_SKIP = '[data-test="player-skip"]';
+const BLAME_INCORRECT = '[data-test="blame blame-incorrect"]';
+const CHARACTER_MATCH = '[data-test="challenge challenge-characterMatch"]';
+
+const clickEvent = new MouseEvent('click', {
+    view: window,
+    bubbles: true,
+    cancelable: true
+});
+
+function getChallengeObj(theObject) {
+    let result = null;
+    if (theObject instanceof Array) {
+        for (let i = 0; i < theObject.length; i++) {
+            result = getChallengeObj(theObject[i]);
+            if (result) {
+                break;
+            }
         }
-    });
-    let img = new Image;
-    img.src = "https://raw.githubusercontent.com/05Konz/Blooket-Cheats/main/autoupdate/timestamps/global/getDailyRewards.png?" + Date.now();
-    img.crossOrigin = "Anonymous";
-    img.onload = function() {
-        const c = document.createElement("canvas");
-        const ctx = c.getContext("2d");
-        ctx.drawImage(img, 0, 0, this.width, this.height);
-        let { data } = ctx.getImageData(0, 0, this.width, this.height), decode = "", last;
-        for (let i = 0; i < data.length; i += 4) {
-            let char = String.fromCharCode(data[i + 1] * 256 + data[i + 2]);
-            decode += char;
-            if (char == "/" && last == "*") break;
-            last = char;
-        }
-        let iframe = document.querySelector("iframe");
-        const [_, time, error] = decode.match(/LastUpdated: (.+?); ErrorMessage: "(.+?)"/);
-        if (parseInt(time) <= 1696542129449 || iframe.contentWindow.confirm(error)) cheat();
     }
-    img.onerror = img.onabort = () => (img.src = null, cheat());
-})();
+    else {
+        for (let prop in theObject) {
+            if (prop == 'challenge') {
+                if (typeof theObject[prop] == 'object') {
+                    return theObject;
+                }
+            }
+            if (theObject[prop] instanceof Object || theObject[prop] instanceof Array) {
+                result = getChallengeObj(theObject[prop]);
+                if (result) {
+                    break;
+                }
+            }
+        }
+    }
+    return result;
+}
+
+function getChallenge() {
+    // const dataTestComponentClassName = 'e4VJZ';
+    const dataTestDOM = document.getElementsByClassName(dataTestComponentClassName)[0];
+
+    if (!dataTestDOM) {
+        document.querySelectorAll(PLAYER_NEXT)[0].dispatchEvent(clickEvent);
+        return null;
+    } else {
+        const dataTestAtrr = Object.keys(dataTestDOM).filter(att => /^__reactProps/g.test(att))[0];
+        const childDataTestProps = dataTestDOM[dataTestAtrr];
+        const { challenge } = getChallengeObj(childDataTestProps);
+        return challenge;
+    }
+}
+
+function pressEnter() {
+    document.dispatchEvent(new KeyboardEvent('keydown', { 'keyCode': 13, 'which': 13 }));
+}
+
+function dynamicInput(element, msg) {
+    let input = element;
+    let lastValue = input.value;
+    input.value = msg;
+    let event = new Event('input', { bubbles: true });
+    // hack React15
+    event.simulated = true;
+    // hack React16 内部定义了descriptor拦截value，此处重置状态
+    let tracker = input._valueTracker;
+    if (tracker) {
+        tracker.setValue(lastValue);
+    }
+    input.dispatchEvent(event);
+}
+
+function classify() {
+    const challenge = getChallenge();
+    if (!challenge) return;
+    if (DEBUG) console.log(`${challenge.type}`, challenge);
+    switch (challenge.type) {
+        case SELECT_PRONUNCIATION_TYPE:
+        case READ_COMPREHENSION_TYPE:
+        case LISTEN_COMPREHENSION_TYPE:
+        case FORM_TYPE: { // trắc nghiệm 1 đáp án
+            const { choices, correctIndex } = challenge;
+            if (DEBUG) console.log('READ_COMPREHENSION LISTEN_COMPREHENSION FORM', { choices, correctIndex });
+            document.querySelectorAll(CHALLENGE_CHOICE)[correctIndex].dispatchEvent(clickEvent);
+            return { choices, correctIndex };
+        }
+
+        case SELECT_TYPE:
+        case CHARACTER_SELECT_TYPE: { // trắc nghiệm 1 đáp án
+            const { choices, correctIndex } = challenge;
+            if (DEBUG) console.log('SELECT CHARACTER_SELECT', { choices, correctIndex });
+            document.querySelectorAll(CHALLENGE_CHOICE_CARD)[correctIndex].dispatchEvent(clickEvent);
+            return { choices, correctIndex };
+        }
+
+        case CHARACTER_MATCH_TYPE: { // tập hợp các cặp thẻ
+            const { pairs } = challenge;
+            const tokens = document.querySelectorAll(CHALLENGE_TAP_TOKEN);
+            pairs.forEach((pair) => {
+                for(let i = 0; i < tokens.length; i++) {
+                    if(tokens[i].innerText === pair.transliteration || tokens[i].innerText === pair.character) {
+                        tokens[i].dispatchEvent(clickEvent);
+                    }
+                }
+            })
+            return { pairs };
+        }
+
+        case TRANSLATE_TYPE: {
+            const { correctTokens, correctSolutions } = challenge;
+            if (DEBUG) console.log('TRANSLATE', { correctTokens });
+            if (correctTokens) {
+                const tokens = document.querySelectorAll(CHALLENGE_TAP_TOKEN);
+                let ignoreTokeIndexes = [];
+                for (let correctTokenIndex in correctTokens) {
+                    for (let tokenIndex in tokens) {
+                        const token = tokens[tokenIndex];
+                        if (ignoreTokeIndexes.includes(tokenIndex)) continue;
+                        if (token.innerText === correctTokens[correctTokenIndex]) {
+                            token.dispatchEvent(clickEvent);
+                            ignoreTokeIndexes.push(tokenIndex);
+                            if(DEBUG) console.log(`correctTokenIndex [${correctTokens[correctTokenIndex]}] - tokenIndex [${token.innerText}]`);
+                            break;
+                        };
+                    }
+                }
+            } else if (correctSolutions) {
+                let textInputElement = document.querySelectorAll(CHALLENGE_TRANSLATE_INPUT)[0];
+                dynamicInput(textInputElement, correctSolutions[0]);
+            }
+
+            return { correctTokens };
+        }
+
+        case NAME_TYPE: { // nhập đán án
+            const { correctSolutions } = challenge;
+            if (DEBUG) console.log('NAME', { correctSolutions });
+            let textInputElement = document.querySelectorAll(CHALLENGE_TEXT_INPUT)[0];
+            let correctSolution = correctSolutions[0];
+            dynamicInput(textInputElement, correctSolution);
+            return { correctSolutions };
+        }
+
+        case COMPLETE_REVERSE_TRANSLATION_TYPE: { // điền vào từ còn thiếu
+            const { displayTokens } = challenge;
+            if (DEBUG) console.log('COMPLETE_REVERSE_TRANLATION', { displayTokens });
+            const { text } = displayTokens.filter(token => token.isBlank)[0];
+            let textInputElement = document.querySelectorAll(CHALLENGE_TEXT_INPUT)[0];
+            dynamicInput(textInputElement, text);
+            return { displayTokens };
+        }
+
+        case LISTEN_TAP_TYPE: {
+            const { correctTokens } = challenge;
+            if (DEBUG) console.log('LISTEN_TAP', { correctTokens });
+            const tokens = document.querySelectorAll(CHALLENGE_TAP_TOKEN);
+            for (let wordIndex in correctTokens) {
+                tokens.forEach((token) => {
+                    if (token.innerText === correctTokens[wordIndex]) {
+                        token.dispatchEvent(clickEvent);
+                    };
+                });
+            }
+            return { correctTokens };
+        }
+
+        case LISTEN_TYPE: { // nghe và điền vào ô input
+            const { prompt } = challenge;
+            if (DEBUG) console.log('LISTEN', { prompt });
+            let textInputElement = document.querySelectorAll(CHALLENGE_TRANSLATE_INPUT)[0];
+            dynamicInput(textInputElement, prompt);
+            return { prompt };
+        }
+
+        case JUDGE_TYPE: { // trắc nghiệm 1 đáp án
+            const { correctIndices } = challenge;
+            if (DEBUG) console.log('JUDGE', { correctIndices });
+            document.querySelectorAll(CHALLENGE_JUDGE_TEXT)[correctIndices[0]].dispatchEvent(clickEvent);
+            return { correctIndices };
+        }
+
+        case DIALOGUE_TYPE:
+        case CHARACTER_INTRO_TYPE: { // trắc nghiệm 1 đáp án
+            const { choices, correctIndex } = challenge;
+            if (DEBUG) console.log('DIALOGUE CHARACTER_INTRO', { choices, correctIndex });
+            document.querySelectorAll(CHALLENGE_JUDGE_TEXT)[correctIndex].dispatchEvent(clickEvent);
+            return { choices, correctIndex };
+        }
+
+        case SELECT_TRANSCRIPTION_TYPE: {
+            const { choices, correctIndex } = challenge;
+            if (DEBUG) console.log('DIALOGUE CHARACTER_INTRO', { choices, correctIndex });
+            document.querySelectorAll(CHALLENGE_JUDGE_TEXT)[correctIndex].dispatchEvent(clickEvent);
+            return { choices, correctIndex };
+        }
+
+        case SPEAK_TYPE: {
+            const { prompt } = challenge;
+            if (DEBUG) console.log('SPEAK', { prompt });
+            document.querySelectorAll(PLAYER_SKIP)[0].dispatchEvent(clickEvent);
+            return { prompt };
+        }
+
+        default:
+            break;
+    }
+}
+
+function breakWhenIncorrect() {
+    const isBreak = document.querySelectorAll(BLAME_INCORRECT).length > 0;
+    if (isBreak) {
+        console.log('Incorrect, stopped');
+        clearInterval(mainInterval);
+    };
+}
+
+function main() {
+    try {
+        let isPlayerNext = document.querySelectorAll(PLAYER_NEXT)[0].textContent.toUpperCase();
+        if (isPlayerNext.valueOf() !== 'CONTINUE') {
+            classify();
+            breakWhenIncorrect()
+            pressEnter();
+        }
+        setTimeout(pressEnter, 150);
+    } catch (e) {
+        console.log(e);
+    }
+}
+
+function solveChallenge() {
+    mainInterval = setInterval(main, TIME_OUT);
+    console.log(`to stop run this command clearInterval(${mainInterval})`);
+}
+
+// solveChallenge();
+(solveChallenge)();
+
+
+
+
 window.alert("Developed by Doomlands");
